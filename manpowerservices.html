@@ -1,0 +1,952 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CrewForge Manpower</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Instrument+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: floating pill nav, gradient-mesh hero with a live deployment board, role marquee, bento services, scroll-drawn process line, interactive crew builder that writes a requirement brief (no backend). */
+:root {
+  --bg: #F4F8FF;
+  --bg2: #E2EBFF;
+  --surface: rgba(255,255,255,.75);
+  --surface-solid: #FFFFFF;
+  --fg: #0A1A3F;
+  --muted: #51628C;
+  --line: rgba(10,26,63,.13);
+  --g1: #1F3FD6;
+  --g2: #2F80ED;
+  --g3: #0891B2;
+  --on-grad: #FFFFFF;
+  --danger: #D12B4B;
+  --star: #F59E0B;
+  --blob1: rgba(31,63,214,.24);
+  --blob2: rgba(47,128,237,.26);
+  --blob3: rgba(8,145,178,.22);
+  --grad: linear-gradient(100deg, var(--g1) 0%, var(--g2) 55%, var(--g3) 120%);
+  --shadow: 0 18px 50px -20px rgba(10,26,63,.4);
+  --display: "Bricolage Grotesque", "Trebuchet MS", system-ui, sans-serif;
+  --body: "Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #050D24; --bg2: #0A1838; --surface: rgba(255,255,255,.055); --surface-solid: #0D1B40;
+    --fg: #EAF0FF; --muted: #98A8CE; --line: rgba(255,255,255,.13);
+    --g1: #4C7DFF; --g2: #2FB8FF; --g3: #4AE3D0; --on-grad: #04102B; --danger: #FF7A90; --star: #FFC247;
+    --blob1: rgba(76,125,255,.38); --blob2: rgba(47,184,255,.24); --blob3: rgba(74,227,208,.2);
+    --shadow: 0 22px 60px -24px rgba(0,0,0,.85);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #050D24; --bg2: #0A1838; --surface: rgba(255,255,255,.055); --surface-solid: #0D1B40;
+  --fg: #EAF0FF; --muted: #98A8CE; --line: rgba(255,255,255,.13);
+  --g1: #4C7DFF; --g2: #2FB8FF; --g3: #4AE3D0; --on-grad: #04102B; --danger: #FF7A90; --star: #FFC247;
+  --blob1: rgba(76,125,255,.38); --blob2: rgba(47,184,255,.24); --blob3: rgba(74,227,208,.2);
+  --shadow: 0 22px 60px -24px rgba(0,0,0,.85);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg); color: var(--fg);
+  font-family: var(--body); font-size: 17px; line-height: 1.6;
+  overflow-x: hidden;
+}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 60; background: var(--bg); }
+h1, h2, h3 { font-family: var(--display); line-height: 1.04; letter-spacing: -.02em; margin: 0; text-wrap: balance; }
+p { margin: 0; }
+a { color: inherit; }
+.wrap { width: 100%; max-width: 1240px; margin-inline: auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.gtext { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent; }
+.eyebrow { font-family: var(--mono); font-size: 12.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); display: inline-flex; align-items: center; gap: 10px; }
+.eyebrow::before { content: ""; width: 26px; height: 2px; background: var(--grad); border-radius: 2px; }
+:focus-visible { outline: 2px solid var(--g2); outline-offset: 3px; border-radius: 8px; }
+
+/* progress */
+#progress { position: fixed; left: 0; right: 0; top: env(safe-area-inset-top, 0px); height: 3px; background: var(--grad); transform-origin: 0 50%; transform: scaleX(0); z-index: 70; }
+
+/* nav */
+.nav-shell { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 12px); z-index: 50; padding-top: 12px; }
+.nav { display: flex; align-items: center; gap: 14px; padding: 9px 10px 9px 18px; border: 1px solid var(--line); background: var(--surface); backdrop-filter: blur(18px) saturate(1.4); -webkit-backdrop-filter: blur(18px) saturate(1.4); border-radius: 999px; box-shadow: var(--shadow); }
+.brand { display: flex; align-items: center; gap: 10px; font-family: var(--display); font-weight: 800; font-size: 19px; letter-spacing: -.02em; text-decoration: none; margin-right: auto; }
+.brand i { width: 26px; height: 26px; border-radius: 9px; background: var(--grad); display: block; position: relative; transform: rotate(-8deg); }
+.brand i::after { content: ""; position: absolute; inset: 7px; border-radius: 50%; background: var(--bg); }
+.nav a.l { font-size: 14.5px; text-decoration: none; color: var(--muted); padding: 6px 10px; border-radius: 99px; }
+.nav a.l:hover { color: var(--fg); }
+.icon-btn { width: 38px; height: 38px; border-radius: 50%; border: 1px solid var(--line); background: transparent; color: var(--fg); cursor: pointer; display: grid; place-items: center; }
+.icon-btn:hover { background: var(--surface); }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; border: 0; cursor: pointer; font: 600 15.5px var(--body); text-decoration: none; padding: 13px 22px; border-radius: 999px; background: var(--grad); color: var(--on-grad); box-shadow: 0 10px 30px -10px var(--g1); }
+.btn.ghost { background: transparent; color: var(--fg); border: 1px solid var(--line); box-shadow: none; }
+.btn.ghost:hover { background: var(--surface); }
+.btn.sm { padding: 9px 16px; font-size: 14.5px; }
+
+/* hero */
+.hero { position: relative; padding-block: 56px 36px; isolation: isolate; }
+.mesh { position: absolute; inset: -140px 0 0; z-index: -1; overflow: hidden; pointer-events: none; }
+.blob { position: absolute; border-radius: 50%; filter: blur(70px); }
+.b1 { width: 520px; height: 520px; background: var(--blob1); left: -120px; top: 40px; animation: drift 16s ease-in-out infinite alternate; }
+.b2 { width: 460px; height: 460px; background: var(--blob2); right: 6%; top: -20px; animation: drift 19s ease-in-out infinite alternate-reverse; }
+.b3 { width: 420px; height: 420px; background: var(--blob3); right: -140px; top: 320px; animation: drift 22s ease-in-out infinite alternate; }
+@keyframes drift { to { transform: translate(60px, 50px) scale(1.12); } }
+.grain { position: absolute; inset: 0; background-image: linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px); background-size: 56px 56px; mask-image: radial-gradient(ellipse 70% 60% at 50% 30%, #000 30%, transparent 75%); -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 30%, #000 30%, transparent 75%); opacity: .55; }
+.hero-grid { display: grid; grid-template-columns: minmax(0, 1.12fr) minmax(0, .88fr); gap: 48px; align-items: center; }
+.hero h1 { font-size: clamp(40px, 5.6vw, 78px); font-weight: 800; margin-block: 22px 22px; }
+.hero .lead { font-size: clamp(17px, 1.6vw, 20px); color: var(--muted); max-width: 52ch; }
+.cta-row { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px; }
+.pill-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 30px; }
+.chip { font-size: 13.5px; padding: 6px 13px; border-radius: 99px; border: 1px solid var(--line); background: var(--surface); color: var(--muted); }
+.chip b { color: var(--fg); font-weight: 600; }
+
+/* deployment board */
+.board { position: relative; border-radius: 28px; padding: 22px; border: 1px solid var(--line); background: var(--surface); backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px); box-shadow: var(--shadow); }
+.board::before { content: ""; position: absolute; inset: -1px; border-radius: 29px; padding: 1px; background: var(--grad); opacity: .55; -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; pointer-events: none; }
+.board-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 16px; }
+.board-head h3 { font-size: 20px; }
+.live { font-family: var(--mono); font-size: 11.5px; letter-spacing: .1em; text-transform: uppercase; display: inline-flex; align-items: center; gap: 8px; color: var(--muted); }
+.live i { width: 8px; height: 8px; border-radius: 50%; background: var(--g3); box-shadow: 0 0 0 0 var(--g3); animation: ping 2s infinite; }
+@keyframes ping { 70% { box-shadow: 0 0 0 9px transparent; } 100% { box-shadow: 0 0 0 0 transparent; } }
+.row { display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; padding: 13px 0; border-top: 1px solid var(--line); }
+.row .role { font-weight: 600; font-size: 15.5px; }
+.row .site { font-size: 13px; color: var(--muted); }
+.row .num { font-family: var(--mono); font-size: 14px; text-align: right; font-variant-numeric: tabular-nums; }
+.bar { grid-column: 1 / -1; height: 7px; border-radius: 9px; background: var(--line); overflow: hidden; }
+.bar span { display: block; height: 100%; border-radius: 9px; background: var(--grad); transform-origin: 0 50%; }
+.board-foot { margin-top: 6px; padding-top: 14px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
+.note { font-family: var(--mono); font-size: 11.5px; color: var(--muted); margin-top: 12px; }
+
+/* marquee */
+.marq { margin-block: 26px 0; border-block: 1px solid var(--line); overflow: hidden; padding-block: 16px; background: var(--surface); }
+.track { display: flex; width: max-content; gap: 44px; animation: slide 38s linear infinite; }
+.track span { font-family: var(--display); font-weight: 700; font-size: clamp(22px, 3vw, 34px); letter-spacing: -.01em; white-space: nowrap; display: inline-flex; align-items: center; gap: 44px; }
+.track span::after { content: ""; width: 14px; height: 14px; border-radius: 4px; transform: rotate(45deg); background: var(--grad); }
+@keyframes slide { to { transform: translateX(-50%); } }
+
+/* sections */
+section { padding-block: 96px 0; }
+.sec-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: 22px 40px; margin-bottom: 40px; }
+.sec-head h2 { font-size: clamp(34px, 5vw, 62px); font-weight: 800; max-width: 17ch; margin-top: 16px; }
+.sec-head p { color: var(--muted); max-width: 44ch; }
+
+/* stats */
+.stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; border: 1px solid var(--line); border-radius: 26px; background: var(--surface); overflow: hidden; }
+.stat { padding: 28px 26px; border-left: 1px solid var(--line); }
+.stat:first-child { border-left: 0; }
+.stat .n { font-family: var(--display); font-weight: 800; font-size: clamp(38px, 4.6vw, 60px); letter-spacing: -.03em; line-height: 1; font-variant-numeric: tabular-nums; }
+.stat .t { margin-top: 10px; color: var(--muted); font-size: 15px; }
+
+/* bento */
+.bento { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 16px; }
+.card { position: relative; border: 1px solid var(--line); border-radius: 26px; padding: 28px; background: var(--surface); overflow: hidden; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.card::after { content: ""; position: absolute; inset: 0; background: radial-gradient(420px circle at var(--mx, 50%) var(--my, 0%), var(--blob2), transparent 60%); opacity: 0; transition: opacity .3s; pointer-events: none; }
+.card:hover::after { opacity: 1; }
+.card h3 { font-size: 26px; }
+.card p { color: var(--muted); font-size: 16px; }
+.card .ico { width: 46px; height: 46px; border-radius: 15px; display: grid; place-items: center; background: var(--grad); color: var(--on-grad); }
+.card .ico svg { width: 24px; height: 24px; }
+.c-a { grid-column: span 3; } .c-b { grid-column: span 3; } .c-c { grid-column: span 2; } .c-d { grid-column: span 2; } .c-e { grid-column: span 2; } .c-f { grid-column: span 6; flex-direction: row; align-items: center; justify-content: space-between; flex-wrap: wrap; background: var(--grad); border: 0; color: var(--on-grad); }
+.c-f p, .c-f h3 { color: var(--on-grad); }
+.c-f .btn { background: var(--bg); color: var(--fg); box-shadow: none; }
+.tags { display: flex; flex-wrap: wrap; gap: 7px; margin-top: auto; }
+.tags span { font-family: var(--mono); font-size: 12px; padding: 4px 10px; border-radius: 8px; border: 1px solid var(--line); color: var(--muted); }
+
+/* industries */
+.ind { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.ind div { padding: 20px 22px; border: 1px solid var(--line); border-radius: 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; font-family: var(--display); font-weight: 700; font-size: 21px; background: var(--surface); transition: transform .25s, border-color .25s; }
+.ind div:hover { transform: translateY(-3px); border-color: var(--g2); }
+.ind small { font-family: var(--mono); font-weight: 400; font-size: 12px; color: var(--muted); text-align: right; }
+
+/* process */
+.proc { position: relative; display: grid; gap: 22px; padding-left: 58px; }
+.line-bg, .line-fg { position: absolute; left: 19px; top: 12px; bottom: 12px; width: 3px; border-radius: 3px; }
+.line-bg { background: var(--line); }
+.line-fg { background: linear-gradient(var(--g1), var(--g2), var(--g3)); transform-origin: 50% 0; transform: scaleY(1); }
+.step { position: relative; border: 1px solid var(--line); background: var(--surface); border-radius: 24px; padding: 26px 28px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 24px; align-items: start; }
+.step::before { content: attr(data-n); position: absolute; left: -58px; top: 22px; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; font-family: var(--mono); font-weight: 500; background: var(--bg); border: 2px solid var(--g2); }
+.step h3 { font-size: 26px; }
+.step p { color: var(--muted); grid-column: 1; max-width: 62ch; }
+.step .when { grid-row: 1; grid-column: 2; font-family: var(--mono); font-size: 12.5px; padding: 5px 11px; border-radius: 99px; background: var(--grad); color: var(--on-grad); white-space: nowrap; }
+
+/* compliance */
+.comp { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+.comp div { padding: 22px; border-radius: 22px; border: 1px dashed var(--line); }
+.comp b { font-family: var(--display); font-size: 22px; display: block; margin-bottom: 6px; }
+.comp span { color: var(--muted); font-size: 15px; }
+
+/* builder */
+.builder { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); gap: 18px; align-items: start; }
+.panel { border: 1px solid var(--line); border-radius: 28px; padding: 26px; background: var(--surface); min-width: 0; }
+.panel h3 { font-size: 24px; margin-bottom: 4px; }
+.panel .sub { color: var(--muted); font-size: 15px; margin-bottom: 18px; }
+.roles { display: grid; gap: 8px; }
+.rrow { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px 10px 16px; border: 1px solid var(--line); border-radius: 16px; }
+.rrow span { font-weight: 500; font-size: 15.5px; }
+.step-ctl { display: inline-flex; align-items: center; gap: 4px; }
+.step-ctl button { width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--line); background: transparent; color: var(--fg); font-size: 18px; cursor: pointer; line-height: 1; }
+.step-ctl button:hover { background: var(--grad); color: var(--on-grad); border-color: transparent; }
+.step-ctl output { min-width: 44px; text-align: center; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.fields { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 18px; }
+.fields label { display: grid; gap: 6px; font-size: 13px; color: var(--muted); font-family: var(--mono); letter-spacing: .04em; min-width: 0; }
+.fields input, .fields select { width: 100%; font: 500 15.5px var(--body); color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 13px; padding: 11px 13px; min-width: 0; }
+.out { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 92px); }
+.total { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin-bottom: 14px; }
+.total b { font-family: var(--display); font-size: clamp(54px, 7vw, 84px); font-weight: 800; line-height: 1; letter-spacing: -.04em; display: inline-block; font-variant-numeric: tabular-nums; }
+.total span { color: var(--muted); }
+pre.brief { margin: 0; white-space: pre-wrap; word-break: break-word; font-family: var(--mono); font-size: 13.5px; line-height: 1.7; padding: 18px; border-radius: 18px; background: var(--bg); border: 1px solid var(--line); max-height: 330px; overflow: auto; }
+.out-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; align-items: center; }
+.contact-lines { margin-top: 16px; display: grid; gap: 6px; font-family: var(--mono); font-size: 13.5px; color: var(--muted); }
+.contact-lines b { color: var(--fg); font-weight: 500; user-select: all; }
+.toast { font-family: var(--mono); font-size: 13px; color: var(--g3); min-height: 1em; }
+
+/* faq */
+.faq { display: grid; gap: 10px; max-width: 900px; }
+details { border: 1px solid var(--line); border-radius: 20px; background: var(--surface); padding: 4px 24px; }
+summary { cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center; gap: 16px; padding-block: 18px; font-family: var(--display); font-weight: 700; font-size: 20px; }
+summary::-webkit-details-marker { display: none; }
+summary::after { content: "+"; font-family: var(--mono); font-size: 24px; color: var(--g2); transition: transform .25s; }
+details[open] summary::after { transform: rotate(45deg); }
+details p { color: var(--muted); padding-bottom: 20px; max-width: 66ch; }
+
+/* footer cta */
+.final { position: relative; margin-top: 96px; padding-block: 90px; text-align: center; overflow: hidden; isolation: isolate; background: var(--bg2); }
+.final .blob { opacity: .9; }
+.final h2 { font-size: clamp(38px, 6.4vw, 84px); font-weight: 800; max-width: 15ch; margin-inline: auto; }
+.final p { margin: 20px auto 0; color: var(--muted); max-width: 46ch; }
+.final .cta-row { justify-content: center; }
+
+@media (max-width: 980px) {
+  .hero-grid, .builder { grid-template-columns: minmax(0, 1fr); }
+  .out { position: static; }
+  .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .stat:nth-child(3) { border-left: 0; }
+  .stat:nth-child(n+3) { border-top: 1px solid var(--line); }
+  .c-a, .c-b { grid-column: span 6; } .c-c, .c-d, .c-e { grid-column: span 3; } .c-e { grid-column: span 6; }
+  .comp { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ind { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 680px) {
+  body { font-size: 16px; }
+  .nav a.l { display: none; }
+  section { padding-block: 72px 0; }
+  .c-a, .c-b, .c-c, .c-d, .c-e { grid-column: span 6; }
+  .ind, .comp, .fields { grid-template-columns: minmax(0, 1fr); }
+  .step { grid-template-columns: minmax(0, 1fr); }
+  .step .when { grid-row: auto; grid-column: 1; justify-self: start; }
+  .proc { padding-left: 46px; } .line-bg, .line-fg { left: 14px; } .step::before { left: -46px; width: 32px; height: 32px; font-size: 13px; }
+  .stat { padding: 20px 18px; }
+}
+/* all services */
+.svc-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+.svc { border: 1px solid var(--line); border-radius: 22px; padding: 22px; background: var(--surface); display: flex; flex-direction: column; gap: 10px; min-width: 0; transition: transform .25s, border-color .25s; }
+.svc:hover { transform: translateY(-4px); border-color: var(--g2); }
+.svc .ico { width: 42px; height: 42px; border-radius: 13px; display: grid; place-items: center; background: var(--grad); color: var(--on-grad); }
+.svc .ico svg { width: 22px; height: 22px; }
+.svc h3 { font-size: 21px; margin-top: 4px; }
+.svc p { color: var(--muted); font-size: 15px; }
+.svc ul { list-style: none; padding: 0; margin: auto 0 0; display: flex; flex-wrap: wrap; gap: 6px; padding-top: 6px; }
+.svc li { font-family: var(--mono); font-size: 11.5px; padding: 3px 9px; border-radius: 7px; border: 1px solid var(--line); color: var(--muted); }
+
+/* why choose us */
+.why { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: 44px; align-items: start; }
+.why-side { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 96px); }
+.why-side h2 { font-size: clamp(34px, 5vw, 62px); font-weight: 800; margin-block: 16px 18px; }
+.why-side p { color: var(--muted); max-width: 40ch; margin-bottom: 26px; }
+.why-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.why-item { border: 1px solid var(--line); border-radius: 22px; padding: 22px; background: var(--surface); display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.why-item .ico { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; border: 2px solid var(--g2); color: var(--g2); }
+.why-item .ico svg { width: 20px; height: 20px; }
+.why-item h3 { font-size: 21px; margin-top: 4px; }
+.why-item p { color: var(--muted); font-size: 15px; }
+
+/* reviews */
+.rev-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 18px 30px; margin-bottom: 22px; }
+.score { display: flex; align-items: center; gap: 16px; padding: 14px 22px; border: 1px solid var(--line); border-radius: 20px; background: var(--surface); }
+.score b { font-family: var(--display); font-size: 48px; line-height: 1; font-weight: 800; font-variant-numeric: tabular-nums; }
+.score small { display: block; color: var(--muted); font-size: 13px; margin-top: 2px; }
+.stars { display: inline-flex; gap: 2px; }
+.stars svg { width: 18px; height: 18px; color: var(--star); }
+.stars svg.off { color: var(--line); }
+.rev-nav { display: flex; gap: 8px; }
+.rev-nav .icon-btn svg { width: 18px; height: 18px; }
+.rev-nav .prev svg { transform: rotate(180deg); }
+.rev-rail { display: flex; gap: 16px; overflow-x: auto; scroll-snap-type: x mandatory; padding-block: 6px 18px; scrollbar-width: none; }
+.rev-rail::-webkit-scrollbar { display: none; }
+.rev { flex: 0 0 min(390px, 86%); scroll-snap-align: start; border: 1px solid var(--line); border-radius: 24px; padding: 24px; background: var(--surface); display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.rev header { display: flex; align-items: center; gap: 12px; }
+.av { width: 44px; height: 44px; border-radius: 50%; background: var(--grad); color: var(--on-grad); display: grid; place-items: center; font-family: var(--display); font-weight: 800; flex: none; }
+.rev .who { font-weight: 600; font-size: 15.5px; line-height: 1.25; }
+.rev .where { font-size: 13px; color: var(--muted); }
+.rev .meta { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--muted); }
+.rev p { font-size: 15.5px; }
+.sample { margin-left: auto; font-family: var(--mono); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; padding: 3px 8px; border-radius: 6px; border: 1px dashed var(--g2); color: var(--g2); white-space: nowrap; }
+
+/* partners */
+.logos { overflow: hidden; -webkit-mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent); mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent); display: grid; gap: 14px; }
+.lrow { display: flex; width: max-content; gap: 14px; animation: slide 46s linear infinite; }
+.lrow.back { animation-direction: reverse; animation-duration: 54s; }
+.logos:hover .lrow { animation-play-state: paused; }
+.logo { display: inline-flex; align-items: center; gap: 12px; padding: 16px 26px; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); font-family: var(--display); font-weight: 700; font-size: 19px; white-space: nowrap; color: var(--muted); transition: color .25s, border-color .25s; }
+.logo svg { width: 28px; height: 28px; color: var(--g2); }
+.logo:hover { color: var(--fg); border-color: var(--g2); }
+
+/* enquiry */
+.enq { display: grid; grid-template-columns: minmax(0, .85fr) minmax(0, 1.15fr); gap: 18px; align-items: start; }
+.enq-info { border-radius: 28px; padding: 32px; background: var(--grad); color: var(--on-grad); display: flex; flex-direction: column; gap: 22px; }
+.enq-info h2 { font-size: clamp(32px, 4.4vw, 52px); font-weight: 800; }
+.enq-info p { opacity: .85; }
+.enq-info ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 14px; }
+.enq-info li { display: flex; gap: 12px; align-items: flex-start; font-size: 15.5px; }
+.enq-info li svg { width: 20px; height: 20px; flex: none; margin-top: 3px; }
+.enq-info li b { font-weight: 600; user-select: all; }
+.enq-form { border: 1px solid var(--line); border-radius: 28px; padding: 28px; background: var(--surface); min-width: 0; }
+.fgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 14px; }
+.fgrid .full { grid-column: 1 / -1; }
+.fld { display: grid; gap: 6px; min-width: 0; }
+.fld label { font-family: var(--mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.fld input, .fld select, .fld textarea { width: 100%; font: 500 15.5px var(--body); color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 13px; padding: 12px 14px; min-width: 0; }
+.fld textarea { min-height: 110px; resize: vertical; }
+.fld input[aria-invalid="true"] { border-color: var(--danger); }
+.err { color: var(--danger); font-size: 13px; min-height: 1.1em; }
+.form-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; margin-top: 18px; }
+.form-foot small { color: var(--muted); font-size: 13px; max-width: 40ch; }
+.done { margin-top: 20px; border: 1px dashed var(--g3); border-radius: 20px; padding: 20px; }
+.done h3 { font-size: 22px; margin-bottom: 6px; }
+.done p { color: var(--muted); font-size: 15px; margin-bottom: 14px; }
+
+.hero-form { position: relative; padding: 26px; box-shadow: var(--shadow); backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px); }
+.hero-form::before { content: ""; position: absolute; inset: -1px; border-radius: 29px; padding: 1px; background: var(--grad); opacity: .6; -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; pointer-events: none; }
+.hero-form h3 { font-size: 26px; }
+.hero-form .sub { color: var(--muted); font-size: 15px; margin: 4px 0 18px; }
+.hero-form .fld input, .hero-form .fld select { padding: 11px 13px; }
+/* footer */
+.foot { margin-top: 96px; background: var(--bg2); border-top: 1px solid var(--line); padding-block: 64px 28px; color: var(--muted); font-size: 15px; }
+.foot-grid { display: grid; grid-template-columns: 1.5fr 1fr 1fr 1.3fr; gap: 36px; }
+.foot h4 { font-family: var(--display); font-size: 17px; color: var(--fg); margin: 0 0 14px; }
+.foot ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 9px; }
+.foot a { text-decoration: none; }
+.foot a:hover { color: var(--fg); }
+.foot .brand { margin-bottom: 14px; color: var(--fg); }
+.foot p { max-width: 36ch; }
+.foot .ci { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 10px; }
+.foot .ci svg { width: 18px; height: 18px; flex: none; margin-top: 3px; color: var(--g2); }
+.foot-bottom { margin-top: 44px; padding-top: 20px; border-top: 1px solid var(--line); display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px 24px; font-size: 13.5px; }
+
+@media (max-width: 980px) {
+  .svc-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .why, .enq { grid-template-columns: minmax(0, 1fr); }
+  .why-side { position: static; }
+  .foot-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 680px) {
+  .svc-grid, .why-list, .fgrid, .foot-grid { grid-template-columns: minmax(0, 1fr); }
+  .enq-info, .enq-form { padding: 22px; }
+  .foot { margin-top: 72px; }
+}
+/* whatsapp float and mobile bar */
+.wa-float { position: fixed; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(env(safe-area-inset-bottom, 0px) + 20px); z-index: 55; width: 60px; height: 60px; border-radius: 50%; background: #25D366; color: #05301A; display: grid; place-items: center; box-shadow: 0 12px 30px -8px rgba(37,211,102,.7); text-decoration: none; }
+.wa-float svg { width: 32px; height: 32px; }
+.wa-float::after { content: ""; position: absolute; inset: 0; border-radius: 50%; border: 2px solid #25D366; animation: wapulse 2.4s ease-out infinite; pointer-events: none; }
+@keyframes wapulse { from { transform: scale(1); opacity: .7; } to { transform: scale(1.55); opacity: 0; } }
+.mbar { display: none; }
+.mbar a { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 13px; border-radius: 999px; font: 600 15.5px var(--body); text-decoration: none; }
+.mbar svg { width: 20px; height: 20px; }
+.mbar .m-call { background: var(--grad); color: var(--on-grad); }
+.mbar .m-wa { background: #25D366; color: #05301A; }
+.wa-btn { background: #25D366; color: #05301A; box-shadow: none; }
+@media (max-width: 680px) {
+  .wa-float { display: none; }
+  .mbar { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; position: fixed; left: 0; right: 0; bottom: 0; z-index: 55; padding: 10px max(16px, env(safe-area-inset-right, 0px)) calc(10px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); background: var(--bg); border-top: 1px solid var(--line); }
+  .foot { padding-bottom: 110px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wa-float::after { animation: none; }
+  .lrow { animation: none; }
+  .blob, .track, .live i { animation: none; }
+  html { scroll-behavior: auto; }
+}
+</style>
+<style>body{margin:0}</style>
+</head>
+<body>
+
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-users" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.6 3.2-5.5 6.5-5.5s5.9 1.9 6.5 5.5"/><circle cx="17.5" cy="9" r="2.6"/><path d="M17 14.6c2.4.1 4 1.6 4.5 4.4"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 4.5-3.2 8-8 9-4.8-1-8-4.5-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></symbol>
+    <symbol id="i-file" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h8l5 5v13H6z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></symbol>
+    <symbol id="i-badge" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="9" r="5.5"/><path d="M8.5 13.5L7 21l5-2.5 5 2.5-1.5-7.5"/></symbol>
+    <symbol id="i-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.2 3 14.8 0 18M12 3c-3 3.2-3 14.8 0 18"/></symbol>
+    <symbol id="i-bolt" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5L19 19M5 19l1.5-1.5M17.5 6.5L19 5"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+    <symbol id="i-star" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2 6.3 20.3l1.2-6.4L2.8 9.5l6.4-.8z"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5 5L20 6.5"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6 7-11a7 7 0 0 0-14 0c0 5 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></symbol>
+    <symbol id="i-phone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></symbol>
+    <symbol id="i-mail" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+    <symbol id="i-truck" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6h11v10H2zM13 9h4l3 3v4h-7"/><circle cx="6.5" cy="17.5" r="1.8"/><circle cx="16.5" cy="17.5" r="1.8"/></symbol>
+    <symbol id="i-wrench" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4a5 5 0 0 0-4 7l-7 7 3 3 7-7a5 5 0 0 0 7-4l-3 3-3-1-1-3z"/></symbol>
+    <symbol id="i-box" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7.5L12 3l9 4.5v9L12 21l-9-4.5zM3 7.5L12 12l9-4.5M12 12v9"/></symbol>
+    <symbol id="i-cup" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8h12v6a5 5 0 0 1-5 5h-2a5 5 0 0 1-5-5zM17 10h2a2 2 0 0 1 0 4h-2M8 3v2M12 3v2"/></symbol>
+    <symbol id="i-heart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7-4.5-8.5-9A4.5 4.5 0 0 1 12 7.5 4.5 4.5 0 0 1 20.5 11C19 15.5 12 20 12 20z"/></symbol>
+    <symbol id="i-bag" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8h14l-1 12H6zM9 8V6a3 3 0 0 1 6 0v2"/></symbol>
+    <symbol id="i-hardhat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17h18M5 17a7 7 0 0 1 14 0M12 5v4"/></symbol>
+    <symbol id="i-wa" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 0 0-7.8 13.5L3 21l4.6-1.2A9 9 0 1 0 12 3z"/><path d="M9.2 8.2c-.4.9 0 2.6 1.6 4.2s3.3 2 4.2 1.6l.7-1.3-1.9-1-.9.8a4 4 0 0 1-1.6-1.6l.8-.9-1-1.9z" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-call" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></symbol>
+  </defs>
+</svg>
+
+<div id="progress"></div>
+
+<div class="nav-shell"><div class="wrap">
+  <nav class="nav" aria-label="Main">
+    <a class="brand" href="#top"><i></i>CrewForge</a>
+    <a class="l" href="#services">Services</a>
+    <a class="l" href="#process">Process</a>
+    <a class="l" href="#builder">Build a crew</a>
+    <a class="l" href="#reviews">Reviews</a>
+    <a class="l" href="#faq">FAQ</a>
+    <button class="icon-btn" id="theme" aria-label="Switch light or dark theme"><svg width="18" height="18"><use href="#i-sun"/></svg></button>
+    <a class="btn sm" href="#enquiry" data-magnet>Enquire now</a>
+  </nav>
+</div></div>
+
+<header class="hero" id="top">
+  <div class="mesh" aria-hidden="true"><div class="grain"></div><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div></div>
+  <div class="wrap hero-grid">
+    <div>
+      <span class="eyebrow" data-reveal>Manpower supply, India</span>
+      <h1 data-reveal data-delay="1"><span class="gtext">Manpower Supply</span> Services for every industry.</h1>
+      <p class="lead" data-reveal data-delay="2">Skilled and semi-skilled workers on your site in 72 hours. We recruit, verify, pay and manage them, so you only manage the work.</p>
+      <div class="cta-row" data-reveal data-delay="3">
+        <a class="btn" href="#builder" data-magnet>Build your crew <svg width="18" height="18"><use href="#i-arrow"/></svg></a>
+        <a class="btn ghost" href="#services" data-magnet>See services</a>
+      </div>
+      <div class="pill-row" data-reveal data-delay="4">
+        <span class="chip"><b>PF + ESI</b> filed monthly</span>
+        <span class="chip"><b>Police-verified</b> workers</span>
+        <span class="chip"><b>Replacement</b> within 24 hrs</span>
+      </div>
+    </div>
+    <div class="enq-form hero-form" data-reveal data-delay="2">
+      <h3>Get a free manpower quote</h3>
+      <p class="sub">Tell us what you need. We reply within one working day.</p>
+      <form id="h-form" novalidate>
+        <div class="fgrid">
+          <div class="fld"><label for="h-name">Your name</label><input id="h-name" autocomplete="name" required><span class="err" data-err="h-name"></span></div>
+          <div class="fld"><label for="h-phone">Phone</label><input id="h-phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="98XXXXXXXX" required><span class="err" data-err="h-phone"></span></div>
+          <div class="fld"><label for="h-service">Service needed</label>
+            <select id="h-service"><option>Contract staffing</option><option>Security guards</option><option>Housekeeping</option><option>Warehouse and logistics</option><option>Factory and production</option><option>Technicians</option><option>Drivers and transport</option><option>Hospitality and catering</option><option>Office and back-office</option><option>Healthcare support</option><option>Construction labour</option><option>Retail and promoters</option><option>Engineers and supervisors</option></select></div>
+          <div class="fld"><label for="h-count">Workers needed</label><input id="h-count" type="number" min="1" inputmode="numeric" placeholder="e.g. 25"><span class="err" data-err="h-count"></span></div>
+          <div class="fld full"><label for="h-city">Site city</label><input id="h-city" autocomplete="address-level2"></div>
+        </div>
+        <div class="form-foot"><button class="btn" type="submit" data-magnet>Get my quote <svg width="18" height="18"><use href="#i-arrow"/></svg></button><small>Your details open in WhatsApp, pre-filled, so you can send them to us.</small></div>
+      </form>
+      <div class="done" id="h-done" hidden aria-live="polite">
+        <h3>Enquiry ready to send</h3>
+        <p>Not sent yet. Tap <b>Send on WhatsApp</b> and your details open pre-filled in a chat. You can also copy the text and email it to <b>hello@crewforge.example</b>.</p>
+        <pre class="brief" id="h-out"></pre>
+        <div class="out-actions"><a class="btn sm wa-btn" id="h-wa" target="_blank" rel="noopener">Send on WhatsApp</a><button class="btn sm ghost" id="h-copy" type="button">Copy enquiry</button><button class="btn sm ghost" id="h-edit" type="button">Edit details</button><span class="toast" id="h-toast"></span></div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="marq" aria-hidden="true">
+  <div class="track">
+    <span>Security guards</span><span>Machine operators</span><span>Warehouse loaders</span><span>Housekeeping</span><span>Electricians</span><span>Drivers</span><span>Welders</span><span>Hotel staff</span><span>Back-office</span><span>Forklift operators</span>
+    <span>Security guards</span><span>Machine operators</span><span>Warehouse loaders</span><span>Housekeeping</span><span>Electricians</span><span>Drivers</span><span>Welders</span><span>Hotel staff</span><span>Back-office</span><span>Forklift operators</span>
+  </div>
+</div>
+
+<section id="numbers">
+  <div class="wrap">
+    <div class="stats" data-reveal>
+      <div class="stat"><div class="n gtext"><span data-count="12000">12,000</span>+</div><div class="t">Workers on our payroll</div></div>
+      <div class="stat"><div class="n gtext"><span data-count="72">72</span> hrs</div><div class="t">Typical mobilisation time</div></div>
+      <div class="stat"><div class="n gtext"><span data-count="180">180</span>+</div><div class="t">Client sites across 14 states</div></div>
+      <div class="stat"><div class="n gtext"><span data-count="98">98</span>%</div><div class="t">On-time wage and PF payments</div></div>
+    </div>
+    <p class="note">Sample numbers for layout. Replace with your real figures before launch.</p>
+  </div>
+</section>
+
+<section id="services">
+  <div class="wrap">
+    <div class="sec-head">
+      <div data-reveal><span class="eyebrow">What we supply</span><h2>One partner for every kind of crew.</h2></div>
+      <p data-reveal>From a 10-guard post to a 500-worker plant shutdown, we handle sourcing, paperwork, payroll and replacements.</p>
+    </div>
+    <div class="bento">
+      <article class="card c-a" data-reveal data-spot><div class="ico"><svg><use href="#i-users"/></svg></div><h3>Contract staffing</h3><p>Workers sit on our payroll and work at your site. You pay one invoice and get a dedicated supervisor for each shift.</p><div class="tags"><span>Skilled</span><span>Semi-skilled</span><span>Unskilled</span></div></article>
+      <article class="card c-b" data-reveal data-delay="1" data-spot><div class="ico"><svg><use href="#i-shield"/></svg></div><h3>Security and facility</h3><p>Trained guards, supervisors, housekeeping and pantry staff for offices, hospitals, malls and factories.</p><div class="tags"><span>Guards</span><span>Housekeeping</span><span>Control room</span></div></article>
+      <article class="card c-c" data-reveal data-spot><div class="ico"><svg><use href="#i-file"/></svg></div><h3>Payroll and compliance</h3><p>PF, ESI, bonus, minimum wage and monthly returns handled and documented.</p></article>
+      <article class="card c-d" data-reveal data-delay="1" data-spot><div class="ico"><svg><use href="#i-badge"/></svg></div><h3>Permanent hiring</h3><p>Supervisors, engineers and managers, with a 90-day replacement guarantee.</p></article>
+      <article class="card c-e" data-reveal data-delay="2" data-spot><div class="ico"><svg><use href="#i-globe"/></svg></div><h3>Overseas placement</h3><p>Trade-tested workers for Gulf employers through registered channels, with document support.</p></article>
+      <article class="card c-f" data-reveal><div><h3>Peak season? Add 200 workers in a week.</h3><p>Festive rush, plant shutdowns, events and harvest. Surge crews arrive trained and inducted.</p></div><a class="btn" href="#builder" data-magnet>Plan a surge <svg width="18" height="18"><use href="#i-arrow"/></svg></a></article>
+    </div>
+  </div>
+</section>
+
+<section id="industries">
+  <div class="wrap">
+    <div class="sec-head"><div data-reveal><span class="eyebrow">Where we work</span><h2>Built around your industry's rules.</h2></div><p data-reveal>Each sector has its own shifts, safety norms and licences. We staff to them.</p></div>
+    <div class="ind">
+      <div data-reveal>Manufacturing<small>Operators, QC, helpers</small></div>
+      <div data-reveal data-delay="1">Warehousing<small>Pickers, loaders, forklift</small></div>
+      <div data-reveal data-delay="2">Construction<small>Masons, welders, riggers</small></div>
+      <div data-reveal>Hospitals<small>Ward boys, housekeeping</small></div>
+      <div data-reveal data-delay="1">Hotels and events<small>Stewards, kitchen, valet</small></div>
+      <div data-reveal data-delay="2">Retail and malls<small>Sales, guards, cleaners</small></div>
+    </div>
+  </div>
+</section>
+
+<section id="all-services">
+  <div class="wrap">
+    <div class="sec-head"><div data-reveal><span class="eyebrow">Complete service list</span><h2>Every role we supply.</h2></div><p data-reveal>Twelve manpower categories under one agreement, one invoice and one account manager.</p></div>
+    <div class="svc-grid">
+      <article class="svc" data-reveal><div class="ico"><svg><use href="#i-shield"/></svg></div><h3>Security guards</h3><p>Uniformed unarmed guards, lady guards, supervisors and control-room operators for round-the-clock posts.</p><ul><li>Guards</li><li>Supervisors</li><li>Gate control</li></ul></article>
+      <article class="svc" data-reveal data-delay="1"><div class="ico"><svg><use href="#i-sun"/></svg></div><h3>Housekeeping</h3><p>Janitors, mechanised cleaners and pantry staff for offices, hospitals, malls and plants.</p><ul><li>Janitorial</li><li>Pantry</li><li>Deep clean</li></ul></article>
+      <article class="svc" data-reveal data-delay="2"><div class="ico"><svg><use href="#i-box"/></svg></div><h3>Warehouse and logistics</h3><p>Loaders, pickers, packers and forklift operators for warehouses, depots and cold chains.</p><ul><li>Loaders</li><li>Packers</li><li>Forklift</li></ul></article>
+      <article class="svc" data-reveal data-delay="3"><div class="ico"><svg><use href="#i-bolt"/></svg></div><h3>Factory and production</h3><p>Machine operators, line helpers, QC inspectors and assembly staff for every shift.</p><ul><li>Operators</li><li>QC</li><li>Assembly</li></ul></article>
+      <article class="svc" data-reveal><div class="ico"><svg><use href="#i-wrench"/></svg></div><h3>Technicians</h3><p>ITI and diploma electricians, welders, fitters and HVAC technicians, trade-tested before deployment.</p><ul><li>Electrician</li><li>Welder</li><li>Fitter</li></ul></article>
+      <article class="svc" data-reveal data-delay="1"><div class="ico"><svg><use href="#i-truck"/></svg></div><h3>Drivers and transport</h3><p>Light and heavy vehicle drivers, chauffeurs and fleet helpers with licence and record checks.</p><ul><li>LMV</li><li>HMV</li><li>Chauffeur</li></ul></article>
+      <article class="svc" data-reveal data-delay="2"><div class="ico"><svg><use href="#i-cup"/></svg></div><h3>Hospitality and catering</h3><p>Stewards, cooks, kitchen helpers, banquet teams and valets for hotels, canteens and events.</p><ul><li>Stewards</li><li>Kitchen</li><li>Events</li></ul></article>
+      <article class="svc" data-reveal data-delay="3"><div class="ico"><svg><use href="#i-file"/></svg></div><h3>Office and back-office</h3><p>Data entry operators, receptionists, accounts assistants and telecallers.</p><ul><li>Data entry</li><li>Reception</li><li>Accounts</li></ul></article>
+      <article class="svc" data-reveal><div class="ico"><svg><use href="#i-heart"/></svg></div><h3>Healthcare support</h3><p>Ward attendants, nursing aides, lab helpers and patient transport staff.</p><ul><li>Attendants</li><li>Aides</li><li>Lab helpers</li></ul></article>
+      <article class="svc" data-reveal data-delay="1"><div class="ico"><svg><use href="#i-hardhat"/></svg></div><h3>Construction labour</h3><p>Masons, bar benders, shuttering crews, riggers and site helpers with safety induction.</p><ul><li>Masons</li><li>Riggers</li><li>Helpers</li></ul></article>
+      <article class="svc" data-reveal data-delay="2"><div class="ico"><svg><use href="#i-bag"/></svg></div><h3>Retail and promoters</h3><p>Sales staff, promoters, cashiers and store helpers for launches, malls and seasonal drives.</p><ul><li>Sales</li><li>Promoters</li><li>Cashiers</li></ul></article>
+      <article class="svc" data-reveal data-delay="3"><div class="ico"><svg><use href="#i-badge"/></svg></div><h3>Engineers and supervisors</h3><p>Diploma and degree engineers, supervisors and managers, on contract or permanent roles.</p><ul><li>Engineers</li><li>Supervisors</li><li>Managers</li></ul></article>
+    </div>
+  </div>
+</section>
+
+<section id="process">
+  <div class="wrap">
+    <div class="sec-head"><div data-reveal><span class="eyebrow">How a crew gets built</span><h2>From brief to first shift.</h2></div><p data-reveal>Four steps, each with a deadline you can hold us to.</p></div>
+    <div class="proc" id="proc">
+      <div class="line-bg"></div><div class="line-fg" id="linefg"></div>
+      <div class="step" data-n="1" data-reveal><h3>Brief</h3><span class="when">Day 0</span><p>Tell us roles, headcount, shifts and site. We confirm scope and wage structure within 24 hours.</p></div>
+      <div class="step" data-n="2" data-reveal><h3>Source and screen</h3><span class="when">Day 1-2</span><p>We shortlist from our own pool, test trades, check ID and run police verification.</p></div>
+      <div class="step" data-n="3" data-reveal><h3>Mobilise</h3><span class="when">Day 3</span><p>Medicals, safety induction, uniforms and travel. Workers reach your gate with documents ready.</p></div>
+      <div class="step" data-n="4" data-reveal><h3>Manage</h3><span class="when">Ongoing</span><p>Daily attendance, a shift supervisor, monthly payroll and compliance returns. Absent worker? Replacement within 24 hours.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="compliance">
+  <div class="wrap">
+    <div class="sec-head"><div data-reveal><span class="eyebrow">Paperwork, handled</span><h2>Compliance that audits cleanly.</h2></div><p data-reveal>Your principal-employer risk drops when the records are in order. Ours are.</p></div>
+    <div class="comp">
+      <div data-reveal><b>PF and ESI</b><span>Monthly challans and UAN for every worker.</span></div>
+      <div data-reveal data-delay="1"><b>Minimum wages</b><span>State-wise rates tracked and applied.</span></div>
+      <div data-reveal data-delay="2"><b>CLRA records</b><span>Registers, muster rolls and wage slips.</span></div>
+      <div data-reveal data-delay="3"><b>Safety cover</b><span>Accident insurance and induction records.</span></div>
+    </div>
+  </div>
+</section>
+
+<section id="why">
+  <div class="wrap why">
+    <div class="why-side" data-reveal>
+      <span class="eyebrow">Why choose us</span>
+      <h2>Staffing you can <span class="gtext">stop worrying about.</span></h2>
+      <p>Most contractors disappear after the first week. We stay on site, on payroll and on call.</p>
+      <a class="btn" href="#enquiry" data-magnet>Talk to us <svg width="18" height="18"><use href="#i-arrow"/></svg></a>
+    </div>
+    <div class="why-list">
+      <div class="why-item" data-reveal><div class="ico"><svg><use href="#i-clock"/></svg></div><h3>Ready in 72 hours</h3><p>A standing pool of trade-tested workers means most crews reach your gate within three days.</p></div>
+      <div class="why-item" data-reveal data-delay="1"><div class="ico"><svg><use href="#i-shield"/></svg></div><h3>Verified workers</h3><p>ID, address and police verification are complete before anyone is deployed.</p></div>
+      <div class="why-item" data-reveal data-delay="2"><div class="ico"><svg><use href="#i-file"/></svg></div><h3>Compliance first</h3><p>PF, ESI, registers and wage slips are filed on time and stay audit-ready.</p></div>
+      <div class="why-item" data-reveal data-delay="3"><div class="ico"><svg><use href="#i-users"/></svg></div><h3>24-hour replacement</h3><p>If a worker leaves or is absent, a trained replacement arrives within a day.</p></div>
+      <div class="why-item" data-reveal><div class="ico"><svg><use href="#i-badge"/></svg></div><h3>Supervisor on every shift</h3><p>A dedicated team lead handles attendance, discipline and daily reports.</p></div>
+      <div class="why-item" data-reveal data-delay="1"><div class="ico"><svg><use href="#i-check"/></svg></div><h3>Clear pricing</h3><p>Wages, statutory costs and our fixed service fee are itemised before you sign.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="builder">
+  <div class="wrap">
+    <div class="sec-head"><div data-reveal><span class="eyebrow">Build your crew</span><h2>Size your team, get a ready brief.</h2></div><p data-reveal>Set headcount per role. The brief on the right updates as you go. Copy it and send it to us.</p></div>
+    <div class="builder">
+      <div class="panel" data-reveal>
+        <h3>Roles needed</h3><p class="sub">Example values are filled in. Change them to match your requirement.</p>
+        <div class="roles" id="roles"></div>
+        <div class="fields">
+          <label for="f-company">COMPANY<input id="f-company" value="Your Company Pvt Ltd" autocomplete="organization"></label>
+          <label for="f-city">SITE CITY<input id="f-city" value="Gurugram" autocomplete="address-level2"></label>
+          <label for="f-shift">SHIFT PATTERN<select id="f-shift"><option>General shift (8 hrs)</option><option selected>Two shifts</option><option>Three shifts, 24x7</option></select></label>
+          <label for="f-start">START<select id="f-start"><option>Within 72 hours</option><option selected>Within 1 week</option><option>Within 2 weeks</option><option>Planning stage</option></select></label>
+        </div>
+      </div>
+      <div class="panel out" data-reveal data-delay="1" aria-live="polite">
+        <div class="total"><b id="total">36</b><span>workers requested</span></div>
+        <pre class="brief" id="brief"></pre>
+        <div class="out-actions"><button class="btn" id="copy" data-magnet>Copy brief</button><span class="toast" id="toast"></span></div>
+        <div class="contact-lines"><span>Send it to <b>hello@crewforge.example</b></span><span>Or call <b>+91 98XXX XXXXX</b></span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="reviews">
+  <div class="wrap">
+    <div class="sec-head"><div data-reveal><span class="eyebrow">Client reviews</span><h2>What clients say about working with us.</h2></div><p data-reveal>Placeholder reviews in a review-card layout. Replace them with real client feedback before you launch.</p></div>
+    <div class="rev-top" data-reveal>
+      <div class="score"><b id="avg">5.0</b><div><span class="stars" id="avg-stars"></span><small id="avg-note">Average of sample reviews</small></div></div>
+      <div class="rev-nav"><button class="icon-btn prev" id="rev-prev" aria-label="Previous reviews"><svg><use href="#i-arrow"/></svg></button><button class="icon-btn" id="rev-next" aria-label="Next reviews"><svg><use href="#i-arrow"/></svg></button></div>
+    </div>
+    <div class="rev-rail" id="rev-rail" tabindex="0" aria-label="Client reviews"></div>
+  </div>
+</section>
+
+<section id="partners">
+  <div class="wrap">
+    <div class="sec-head"><div data-reveal><span class="eyebrow">Our partners</span><h2>Trusted across industries.</h2></div><p data-reveal>Placeholder logos with made-up names. Swap in your real client and partner logos.</p></div>
+  </div>
+  <div class="logos" id="logos" data-reveal aria-label="Partner logos"></div>
+</section>
+
+<section id="faq">
+  <div class="wrap">
+    <div class="sec-head"><div data-reveal><span class="eyebrow">Questions</span><h2>Things clients ask first.</h2></div></div>
+    <div class="faq">
+      <details data-reveal open><summary>Who pays the workers?</summary><p>We do. Workers are on our payroll, and we file PF, ESI and other statutory dues. You pay us one monthly invoice based on attendance.</p></details>
+      <details data-reveal><summary>What if a worker leaves or underperforms?</summary><p>We replace the worker within 24 hours at no extra fee. Repeat issues go to your account manager for review.</p></details>
+      <details data-reveal><summary>Can we hire a worker permanently later?</summary><p>Yes. After an agreed contract period, you can convert any worker to your own payroll. Terms are fixed in the agreement up front.</p></details>
+      <details data-reveal><summary>How do you price a crew?</summary><p>Wages and statutory costs at actuals, plus a transparent service fee per worker. We share the full breakup before you sign.</p></details>
+      <details data-reveal><summary>Do you cover small requirements?</summary><p>Yes. We supply anything from 5 workers to several hundred. Start small and scale as the site grows.</p></details>
+    </div>
+  </div>
+</section>
+
+<div class="final">
+  <div class="mesh" aria-hidden="true" style="inset:0"><div class="blob b1" style="top:-120px"></div><div class="blob b2"></div><div class="blob b3" style="top:120px"></div></div>
+  <div class="wrap">
+    <h2 data-reveal>Your next shift is <span class="gtext">already staffed.</span></h2>
+    <p data-reveal>Send us your requirement today and see a shortlist in 48 hours.</p>
+    <div class="cta-row" data-reveal><a class="btn" href="#builder" data-magnet>Build your crew <svg width="18" height="18"><use href="#i-arrow"/></svg></a></div>
+  </div>
+</div>
+
+<section id="enquiry">
+  <div class="wrap enq">
+    <div class="enq-info" data-reveal>
+      <div><h2>Send us your enquiry.</h2><p style="margin-top:14px">Share what you need and we reply within one working day with a plan and a shortlist timeline.</p></div>
+      <ul>
+        <li><svg><use href="#i-phone"/></svg><span>Call<br><b>+91 98XXX XXXXX</b></span></li>
+        <li><svg><use href="#i-mail"/></svg><span>Email<br><b>hello@crewforge.example</b></span></li>
+        <li><svg><use href="#i-pin"/></svg><span>Office<br><b>Your office address, City, State</b></span></li>
+        <li><svg><use href="#i-clock"/></svg><span>Hours<br><b>Mon-Sat, 9:30 am to 6:30 pm</b></span></li>
+      </ul>
+    </div>
+    <div class="enq-form" data-reveal data-delay="1">
+      <form id="enq-form" novalidate>
+        <div class="fgrid">
+          <div class="fld"><label for="e-name">Your name</label><input id="e-name" autocomplete="name" required><span class="err" data-err="e-name"></span></div>
+          <div class="fld"><label for="e-company">Company</label><input id="e-company" autocomplete="organization"></div>
+          <div class="fld"><label for="e-phone">Phone</label><input id="e-phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="98XXXXXXXX" required><span class="err" data-err="e-phone"></span></div>
+          <div class="fld"><label for="e-email">Email</label><input id="e-email" type="email" autocomplete="email" placeholder="name@company.com"><span class="err" data-err="e-email"></span></div>
+          <div class="fld"><label for="e-service">Service needed</label>
+            <select id="e-service"><option>Contract staffing</option><option>Security guards</option><option>Housekeeping</option><option>Warehouse and logistics</option><option>Factory and production</option><option>Technicians</option><option>Drivers and transport</option><option>Hospitality and catering</option><option>Office and back-office</option><option>Healthcare support</option><option>Construction labour</option><option>Retail and promoters</option><option>Engineers and supervisors</option><option>Payroll and compliance only</option></select></div>
+          <div class="fld"><label for="e-count">Workers needed</label><input id="e-count" type="number" min="1" inputmode="numeric" placeholder="e.g. 25"><span class="err" data-err="e-count"></span></div>
+          <div class="fld full"><label for="e-city">Site city</label><input id="e-city" autocomplete="address-level2"></div>
+          <div class="fld full"><label for="e-msg">Requirement details</label><textarea id="e-msg" placeholder="Roles, shifts, start date, anything we should know"></textarea></div>
+        </div>
+        <div class="form-foot"><button class="btn" type="submit" data-magnet>Send enquiry <svg width="18" height="18"><use href="#i-arrow"/></svg></button><small>Your details open in WhatsApp, pre-filled, so you can send them to us.</small></div>
+      </form>
+      <div class="done" id="enq-done" hidden aria-live="polite">
+        <h3>Enquiry ready to send</h3>
+        <p>Not sent yet. Tap <b>Send on WhatsApp</b> and your details open pre-filled in a chat. You can also copy the text and email it to <b>hello@crewforge.example</b>.</p>
+        <pre class="brief" id="enq-out"></pre>
+        <div class="out-actions"><a class="btn sm wa-btn" id="enq-wa" target="_blank" rel="noopener">Send on WhatsApp</a><button class="btn sm ghost" id="enq-copy" type="button">Copy enquiry</button><button class="btn sm ghost" id="enq-edit" type="button">Edit details</button><span class="toast" id="enq-toast"></span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="foot">
+  <div class="wrap">
+    <div class="foot-grid">
+      <div><a class="brand" href="#top"><i></i>CrewForge</a><p>Manpower supply for industry, security, logistics and facilities. We recruit, verify, pay and manage your crew.</p></div>
+      <div><h4>Services</h4><ul><li><a href="#all-services">Security guards</a></li><li><a href="#all-services">Housekeeping</a></li><li><a href="#all-services">Warehouse and logistics</a></li><li><a href="#all-services">Technicians</a></li><li><a href="#all-services">Overseas placement</a></li></ul></div>
+      <div><h4>Company</h4><ul><li><a href="#why">Why choose us</a></li><li><a href="#process">How it works</a></li><li><a href="#reviews">Reviews</a></li><li><a href="#faq">FAQ</a></li><li><a href="#builder">Build a crew</a></li></ul></div>
+      <div><h4>Contact</h4>
+        <div class="ci"><svg><use href="#i-phone"/></svg><span>+91 98XXX XXXXX</span></div>
+        <div class="ci"><svg><use href="#i-mail"/></svg><span>hello@crewforge.example</span></div>
+        <div class="ci"><svg><use href="#i-pin"/></svg><span>Your office address, City, State</span></div>
+      </div>
+    </div>
+    <div class="foot-bottom"><span>&copy; 2026 CrewForge Manpower Services. All rights reserved.</span><span>Labour licence no. and GST no.: add yours here</span><a href="#top">Back to top</a></div>
+  </div>
+</footer>
+
+<a class="wa-float" data-wa aria-label="Chat on WhatsApp" target="_blank" rel="noopener"><svg><use href="#i-wa"/></svg></a>
+<div class="mbar">
+  <a class="m-call" data-call aria-label="Call us"><svg><use href="#i-call"/></svg>Call now</a>
+  <a class="m-wa" data-wa target="_blank" rel="noopener" aria-label="Chat on WhatsApp"><svg><use href="#i-wa"/></svg>WhatsApp</a>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/motion@11.18.2/dist/motion.js"></script>
+<script>
+(function () {
+  var $ = function (s, r) { return (r || document).querySelector(s); };
+  var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
+  var fmt = function (n) { return Math.round(n).toLocaleString('en-IN'); };
+
+  /* CONTACT SETTINGS: replace with your real number (country code, digits only) */
+  var WA_NUMBER = '910000000000';
+  var CALL_NUMBER = '+910000000000';
+  function waLink(text) { return 'https://wa.me/' + WA_NUMBER + '?text=' + encodeURIComponent(text); }
+  $$('[data-wa]').forEach(function (a) { a.href = waLink('Hello, I need manpower supply services.'); });
+  $$('[data-call]').forEach(function (a) { a.href = 'tel:' + CALL_NUMBER; });
+
+  /* theme toggle */
+  $('#theme').addEventListener('click', function () {
+    var root = document.documentElement;
+    var cur = root.getAttribute('data-theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    root.setAttribute('data-theme', cur === 'dark' ? 'light' : 'dark');
+  });
+
+  /* spotlight cards */
+  $$('[data-spot]').forEach(function (c) {
+    c.addEventListener('pointermove', function (e) {
+      var r = c.getBoundingClientRect();
+      c.style.setProperty('--mx', (e.clientX - r.left) + 'px');
+      c.style.setProperty('--my', (e.clientY - r.top) + 'px');
+    });
+  });
+
+  /* crew builder */
+  var ROLES = [
+    ['Security guards', 10], ['Housekeeping staff', 6], ['Warehouse loaders', 20],
+    ['Machine operators', 0], ['Electricians / technicians', 0], ['Drivers', 0],
+    ['Hospitality staff', 0], ['Back-office staff', 0]
+  ];
+  var counts = ROLES.map(function (r) { return r[1]; });
+  var rolesEl = $('#roles'), totalEl = $('#total'), briefEl = $('#brief');
+  var M = window.Motion, reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  ROLES.forEach(function (r, i) {
+    var row = document.createElement('div');
+    row.className = 'rrow';
+    row.innerHTML = '<span>' + r[0] + '</span><div class="step-ctl"><button type="button" aria-label="Fewer ' + r[0] + '">&minus;</button><output id="o' + i + '">' + r[1] + '</output><button type="button" aria-label="More ' + r[0] + '">+</button></div>';
+    var b = row.querySelectorAll('button');
+    b[0].addEventListener('click', function () { counts[i] = Math.max(0, counts[i] - 5); render(true); });
+    b[1].addEventListener('click', function () { counts[i] += 5; render(true); });
+    rolesEl.appendChild(row);
+  });
+
+  function render(pop) {
+    var total = 0, lines = [];
+    counts.forEach(function (c, i) {
+      $('#o' + i).textContent = c;
+      total += c;
+      if (c > 0) lines.push('  - ' + ROLES[i][0] + ': ' + c);
+    });
+    totalEl.textContent = total;
+    var co = $('#f-company').value.trim() || '(company)';
+    var city = $('#f-city').value.trim() || '(city)';
+    briefEl.textContent =
+      'MANPOWER REQUIREMENT\n' +
+      'Company: ' + co + '\n' +
+      'Site: ' + city + '\n' +
+      'Shift: ' + $('#f-shift').value + '\n' +
+      'Start: ' + $('#f-start').value + '\n' +
+      'Total: ' + total + ' workers\n' +
+      (lines.length ? 'Roles:\n' + lines.join('\n') : 'Roles: (none selected)');
+    if (pop && M && !reduce) M.animate(totalEl, { scale: [1.14, 1] }, { duration: .35 });
+  }
+  ['#f-company', '#f-city', '#f-shift', '#f-start'].forEach(function (s) {
+    $(s).addEventListener('input', function () { render(false); });
+    $(s).addEventListener('change', function () { render(false); });
+  });
+  render(false);
+
+  $('#copy').addEventListener('click', function () {
+    var t = briefEl.textContent, toast = $('#toast');
+    function ok() { toast.textContent = 'Brief copied.'; setTimeout(function () { toast.textContent = ''; }, 2200); }
+    function fallback() {
+      var rg = document.createRange(); rg.selectNodeContents(briefEl);
+      var sel = getSelection(); sel.removeAllRanges(); sel.addRange(rg);
+      toast.textContent = 'Press Ctrl/Cmd+C to copy.';
+    }
+    try { navigator.clipboard.writeText(t).then(ok, fallback); } catch (e) { fallback(); }
+  });
+
+  /* reviews (placeholder content) */
+  function stars(n) {
+    var s = '';
+    for (var i = 0; i < 5; i++) s += '<svg viewBox="0 0 24 24" class="' + (i < n ? 'on' : 'off') + '"><use href="#i-star"/></svg>';
+    return s;
+  }
+  var REVIEWS = [
+    ['Plant Manager', 'Auto components, Pune', 5, '2 weeks ago', 'Forty operators were on the line before our shutdown started. Attendance reports came every morning and absentees were replaced the same day.'],
+    ['Facility Head', 'Private hospital, Noida', 5, '1 month ago', 'Housekeeping and ward attendants stayed consistent through the year. Wage and PF paperwork was always ready when our auditors asked.'],
+    ['Operations Lead', 'Warehouse park, Manesar', 4, '1 month ago', 'Peak-season surge crew arrived trained and inducted. A couple of late starts in week one were fixed quickly by the supervisor.'],
+    ['Admin Manager', 'IT campus, Gurugram', 5, '2 months ago', 'Guards, pantry and reception staff handled by one account manager. One invoice and one point of contact made life simple.'],
+    ['General Manager', 'Hotel group, Jaipur', 5, '3 months ago', 'Banquet and kitchen teams for a wedding season were hired and briefed in under a week. Guests never noticed the new faces.'],
+    ['Project Engineer', 'Solar EPC, Jodhpur', 4, '4 months ago', 'Electricians and riggers were trade-tested and safety inducted. Commercials were clear from day one.']
+  ];
+  var rail = $('#rev-rail'), sum = 0;
+  REVIEWS.forEach(function (r) {
+    sum += r[2];
+    var ini = r[0].split(' ').map(function (w) { return w[0]; }).join('').slice(0, 2);
+    var el = document.createElement('article');
+    el.className = 'rev';
+    el.innerHTML = '<header><div class="av">' + ini + '</div><div><div class="who">' + r[0] + '</div><div class="where">' + r[1] + '</div></div><span class="sample">Sample</span></header>' +
+      '<div class="meta"><span class="stars" role="img" aria-label="' + r[2] + ' out of 5 stars">' + stars(r[2]) + '</span><span>' + r[3] + '</span></div><p>' + r[4] + '</p>';
+    rail.appendChild(el);
+  });
+  var avg = sum / REVIEWS.length;
+  $('#avg').textContent = avg.toFixed(1);
+  $('#avg-stars').innerHTML = stars(Math.round(avg));
+  $('#avg-note').textContent = 'Average of ' + REVIEWS.length + ' sample reviews';
+  $('#rev-prev').addEventListener('click', function () { rail.scrollBy({ left: -rail.clientWidth * .8, behavior: 'smooth' }); });
+  $('#rev-next').addEventListener('click', function () { rail.scrollBy({ left: rail.clientWidth * .8, behavior: 'smooth' }); });
+
+  /* partner logos (placeholder content) */
+  var SH = {
+    circle: '<circle cx="12" cy="12" r="9" fill="currentColor"/>',
+    tri: '<path d="M12 3l9 17H3z" fill="currentColor"/>',
+    hex: '<path d="M12 2l8.7 5v10L12 22l-8.7-5V7z" fill="currentColor"/>',
+    dia: '<rect x="5" y="5" width="14" height="14" rx="3" transform="rotate(45 12 12)" fill="currentColor"/>',
+    ring: '<circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="4"/>',
+    plus: '<path d="M9 3h6v6h6v6h-6v6H9v-6H3V9h6z" fill="currentColor"/>',
+    half: '<path d="M3 13a9 9 0 0 1 18 0z" fill="currentColor"/><rect x="3" y="15" width="18" height="5" rx="2" fill="currentColor"/>',
+    bars: '<rect x="3" y="12" width="4" height="9" rx="1.5" fill="currentColor"/><rect x="10" y="7" width="4" height="14" rx="1.5" fill="currentColor"/><rect x="17" y="3" width="4" height="18" rx="1.5" fill="currentColor"/>'
+  };
+  var P1 = [['Northgate Steel', 'hex'], ['Aarav Logistics', 'tri'], ['BlueLeaf Hospitals', 'plus'], ['Orbit Retail', 'ring'], ['Kiran Autoparts', 'circle']];
+  var P2 = [['Meridian Hotels', 'half'], ['Sunmesh Energy', 'dia'], ['Pinnacle Infra', 'bars'], ['Veda Foods', 'circle'], ['Zenith Cold Chain', 'tri']];
+  function row(list, cls) {
+    var h = '';
+    for (var k = 0; k < 2; k++) list.forEach(function (p) { h += '<div class="logo"><svg viewBox="0 0 24 24" aria-hidden="true">' + SH[p[1]] + '</svg>' + p[0] + '</div>'; });
+    return '<div class="lrow ' + cls + '">' + h + '</div>';
+  }
+  $('#logos').innerHTML = row(P1, '') + row(P2, 'back');
+
+  /* enquiry form (no server: builds text to copy) */
+  var form = $('#enq-form'), done = $('#enq-done'), out = $('#enq-out');
+  function setErr(id, msg) {
+    var f = $('#' + id), e = $('[data-err="' + id + '"]');
+    if (e) e.textContent = msg || '';
+    if (f) f.setAttribute('aria-invalid', msg ? 'true' : 'false');
+  }
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var ok = true, name = $('#e-name').value.trim(), phone = $('#e-phone').value.replace(/[\s-]/g, ''), email = $('#e-email').value.trim(), cnt = $('#e-count').value.trim();
+    setErr('e-name', name ? '' : 'Enter your name.'); if (!name) ok = false;
+    var pOk = /^(\+?91)?[6-9]\d{9}$/.test(phone);
+    setErr('e-phone', pOk ? '' : 'Enter a 10-digit Indian mobile number.'); if (!pOk) ok = false;
+    var mOk = !email || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    setErr('e-email', mOk ? '' : 'Check the email address.'); if (!mOk) ok = false;
+    var cOk = !cnt || (+cnt >= 1 && isFinite(+cnt));
+    setErr('e-count', cOk ? '' : 'Enter 1 or more.'); if (!cOk) ok = false;
+    if (!ok) { var bad = $('[aria-invalid="true"]', form); if (bad) bad.focus(); return; }
+    out.textContent =
+      'MANPOWER ENQUIRY\n' +
+      'Name: ' + name + '\n' +
+      'Company: ' + ($('#e-company').value.trim() || '-') + '\n' +
+      'Phone: ' + $('#e-phone').value.trim() + '\n' +
+      'Email: ' + (email || '-') + '\n' +
+      'Service: ' + $('#e-service').value + '\n' +
+      'Workers: ' + (cnt || '-') + '\n' +
+      'City: ' + ($('#e-city').value.trim() || '-') + '\n' +
+      'Details: ' + ($('#e-msg').value.trim() || '-');
+    $('#enq-wa').href = waLink(out.textContent);
+    done.hidden = false;
+    done.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  });
+  $('#enq-edit').addEventListener('click', function () { done.hidden = true; $('#e-name').focus(); });
+  $('#enq-copy').addEventListener('click', function () {
+    var toast = $('#enq-toast');
+    function ok() { toast.textContent = 'Enquiry copied.'; setTimeout(function () { toast.textContent = ''; }, 2200); }
+    function fb() { var rg = document.createRange(); rg.selectNodeContents(out); var s = getSelection(); s.removeAllRanges(); s.addRange(rg); toast.textContent = 'Press Ctrl/Cmd+C to copy.'; }
+    try { navigator.clipboard.writeText(out.textContent).then(ok, fb); } catch (err) { fb(); }
+  });
+
+  /* hero enquiry form */
+  var hf = $('#h-form'), hdone = $('#h-done'), hout = $('#h-out');
+  hf.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var ok = true, name = $('#h-name').value.trim(), phone = $('#h-phone').value.replace(/[\s-]/g, ''), cnt = $('#h-count').value.trim();
+    setErr('h-name', name ? '' : 'Enter your name.'); if (!name) ok = false;
+    var pOk = /^(\+?91)?[6-9]\d{9}$/.test(phone);
+    setErr('h-phone', pOk ? '' : 'Enter a 10-digit Indian mobile number.'); if (!pOk) ok = false;
+    var cOk = !cnt || (+cnt >= 1 && isFinite(+cnt));
+    setErr('h-count', cOk ? '' : 'Enter 1 or more.'); if (!cOk) ok = false;
+    if (!ok) { var bad = $('[aria-invalid="true"]', hf); if (bad) bad.focus(); return; }
+    hout.textContent =
+      'MANPOWER ENQUIRY\n' +
+      'Name: ' + name + '\n' +
+      'Phone: ' + $('#h-phone').value.trim() + '\n' +
+      'Service: ' + $('#h-service').value + '\n' +
+      'Workers: ' + (cnt || '-') + '\n' +
+      'City: ' + ($('#h-city').value.trim() || '-');
+    $('#h-wa').href = waLink(hout.textContent);
+    hdone.hidden = false;
+    hdone.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  });
+  $('#h-edit').addEventListener('click', function () { hdone.hidden = true; $('#h-name').focus(); });
+  $('#h-copy').addEventListener('click', function () {
+    var toast = $('#h-toast');
+    function ok() { toast.textContent = 'Enquiry copied.'; setTimeout(function () { toast.textContent = ''; }, 2200); }
+    function fb() { var rg = document.createRange(); rg.selectNodeContents(hout); var sel = getSelection(); sel.removeAllRanges(); sel.addRange(rg); toast.textContent = 'Press Ctrl/Cmd+C to copy.'; }
+    try { navigator.clipboard.writeText(hout.textContent).then(ok, fb); } catch (err) { fb(); }
+  });
+
+  /* motion */
+  if (!M || reduce) return;
+  var animate = M.animate, inView = M.inView, scroll = M.scroll;
+  var ease = [0.22, 1, 0.36, 1];
+
+  $$('[data-reveal]').forEach(function (el) {
+    var d = (parseFloat(el.getAttribute('data-delay')) || 0) * 0.09;
+    var below = el.getBoundingClientRect().top > innerHeight * 0.92;
+    if (!below) {
+      animate(el, { opacity: [0, 1], transform: ['translateY(22px)', 'translateY(0px)'] }, { duration: .9, delay: d, ease: ease });
+    } else {
+      el.style.opacity = '0'; el.style.transform = 'translateY(30px)';
+      inView(el, function () {
+        animate(el, { opacity: 1, transform: 'translateY(0px)' }, { duration: .85, delay: d, ease: ease });
+      }, { margin: '0px 0px -8% 0px' });
+    }
+  });
+  setTimeout(function () { $$('[data-reveal]').forEach(function (el) { if (el.style.opacity === '0') { el.style.opacity = '1'; el.style.transform = 'none'; } }); }, 5000);
+
+  /* bars grow */
+  $$('.bar span').forEach(function (b, i) {
+    animate(b, { transform: ['scaleX(0)', 'scaleX(1)'] }, { duration: 1.2, delay: .5 + i * .12, ease: ease });
+  });
+
+  /* counters */
+  $$('[data-count]').forEach(function (el) {
+    var target = parseFloat(el.getAttribute('data-count'));
+    var run = function () { animate(0, target, { duration: 1.6, ease: ease, onUpdate: function (v) { el.textContent = fmt(v); } }); };
+    if (el.getBoundingClientRect().top < innerHeight) run(); else inView(el, run);
+  });
+
+  /* scroll progress and process line */
+  scroll(animate($('#progress'), { transform: ['scaleX(0)', 'scaleX(1)'] }, { ease: 'linear' }));
+  scroll(animate($('#linefg'), { transform: ['scaleY(0.02)', 'scaleY(1)'] }, { ease: 'linear' }), { target: $('#proc'), offset: ['start 75%', 'end 60%'] });
+
+  /* magnetic buttons */
+  $$('[data-magnet]').forEach(function (b) {
+    b.addEventListener('pointermove', function (e) {
+      var r = b.getBoundingClientRect();
+      animate(b, { x: (e.clientX - r.left - r.width / 2) * .22, y: (e.clientY - r.top - r.height / 2) * .3 }, { duration: .25 });
+    });
+    b.addEventListener('pointerleave', function () { animate(b, { x: 0, y: 0 }, { type: 'spring', stiffness: 300, damping: 14 }); });
+  });
+})();
+</script>
+
+</body>
+</html>
